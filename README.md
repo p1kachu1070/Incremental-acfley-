@@ -40,6 +40,14 @@ node tools/clip-render.js      # -> dist/except-you-clip.mp4 (needs ffmpeg)
 
 The music is original and synthesized, so there's nothing to get flagged for copyright.
 
+To use a song instead, render the version with no music (rain, heartbeat, whispers, the silence, the birds) and add the song inside TikTok, where it's licensed:
+
+```sh
+node tools/clip-render.js --no-music   # -> dist/except-you-clip-for-a-song.mp4
+```
+
+The words "except you." land at 4.0 seconds; trim the song so its line hits there.
+
 Tools (Node, plus the Playwright that ships with Chromium):
 
 - `node tools/sim.js [clicksPerSecond]` simulates a player and prints when each act lands. Use it after changing any number in `data.js`.

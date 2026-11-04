@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* Renders clip.html to a vertical 1080x1920 MP4 with the game's own audio, ready for TikTok/Reels/Shorts.
-   Needs ffmpeg on PATH.   usage: node tools/clip-render.js [out.mp4] */
+   Needs ffmpeg on PATH.   usage: node tools/clip-render.js [out.mp4] [--no-music]
+   --no-music keeps only the room sound (rain, heartbeat, whispers, birds) so a song can go on top. */
 'use strict';
 const path = require('path');
 const fs = require('fs');
@@ -9,7 +10,9 @@ const { spawn } = require('child_process');
 const { chromium } = require('playwright');
 
 const root = path.join(__dirname, '..');
-const out = path.resolve(process.argv[2] || path.join(root, 'dist', 'except-you-clip.mp4'));
+const noMusic = process.argv.includes('--no-music');
+const outArg = process.argv.slice(2).find(a => !a.startsWith('--'));
+const out = path.resolve(outArg || path.join(root, 'dist', noMusic ? 'except-you-clip-for-a-song.mp4' : 'except-you-clip.mp4'));
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'except-you-clip-'));
 
 (async () => {
@@ -23,7 +26,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'except-you-clip-'));
 
   console.log('rendering audio…');
   const wav = path.join(tmp, 'audio.wav');
-  fs.writeFileSync(wav, Buffer.from(await page.evaluate(() => window.__clip.audio()), 'base64'));
+  fs.writeFileSync(wav, Buffer.from(await page.evaluate(m => window.__clip.audio(m ? { music: false } : undefined), noMusic), 'base64'));
   // a fresh page for frames, so the offline audio graph is out of the way
   await page.reload();
   await page.evaluate(() => Clip.ready());

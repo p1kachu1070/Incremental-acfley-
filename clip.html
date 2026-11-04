@@ -69,7 +69,7 @@
   // for tools/clip-render.js
   window.__clip = {
     frame(t, quality) { Clip.draw(g, t); return canvas.toDataURL('image/jpeg', quality || 0.93); },
-    audio() { return Sound.renderClipWav(Clip.DURATION); },
+    audio(opts) { return Sound.renderClipWav(Clip.DURATION, opts); },
   };
 })();
 </script>
