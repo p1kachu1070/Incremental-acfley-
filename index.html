@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- build:head -->
+<title>except you.</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="an incremental game about 3 am, the building across the street, and trying to get back to silence.">
+<meta name="theme-color" content="#07080d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Spectral:ital,wght@0,300;0,400;1,300;1,400&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<!-- /build:head -->
+</head>
+<body>
+<!-- build:body -->
+<canvas id="bg" aria-hidden="true"></canvas>
+<div id="drift" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<div id="app" class="app" hidden>
+  <header class="topbar">
+    <div class="clock" id="clock">3:07 am</div>
+    <div class="mini" id="mini" aria-hidden="true"></div>
+    <div class="top-actions">
+      <button type="button" id="btn-sound" class="quiet-btn" aria-pressed="true">sound on</button>
+      <button type="button" id="btn-menu" class="quiet-btn" aria-expanded="false" aria-controls="menu">menu</button>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <section class="panel panel-mind" id="panel-mind" aria-label="your head">
+      <div class="counter" id="counter" hidden>
+        <div class="count-num" id="count">0</div>
+        <div class="count-label"><span id="count-label">thoughts</span><span class="rate" id="rate"></span></div>
+        <div class="sub-counts">
+          <span class="sub-count longing" id="longing-count" hidden></span>
+          <span class="sub-count quiet" id="quiet-count" hidden></span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="main-btn" class="main-btn">stare at the ceiling</button>
+        <button type="button" id="breath" class="breath" hidden aria-label="hold to breathe in, let go to breathe out">
+          <span class="breath-ring" aria-hidden="true"></span>
+          <span class="breath-core" aria-hidden="true"></span>
+          <span class="breath-text" id="breath-text">hold</span>
+        </button>
+        <p class="breath-hint" id="breath-hint" hidden>hold to breathe in. let go to breathe out.</p>
+      </div>
+
+      <div class="whisper-slot" id="whisper-slot"></div>
+      <div class="choice" id="choice" hidden></div>
+
+      <ol class="log" id="log" aria-live="polite"></ol>
+
+      <div class="kept-wrap" id="kept-wrap" hidden>
+        <button type="button" class="kept-btn" id="kept-btn" aria-expanded="false" aria-controls="kept-list">kept · 0</button>
+        <ul class="kept-list" id="kept-list" hidden></ul>
+      </div>
+    </section>
+
+    <section class="panel panel-window" id="panel-window" hidden aria-label="across the street">
+      <div class="panel-head">
+        <h2>across the street</h2>
+        <span class="panel-meta" id="window-meta"></span>
+      </div>
+      <div class="building-wrap" id="building-wrap">
+        <canvas id="building"></canvas>
+        <div class="win-hits" id="win-hits"></div>
+      </div>
+      <div class="window-caption" id="win-caption">
+        <p class="cap-id" id="cap-id"></p>
+        <p class="cap-text" id="cap-text">some of the lights are still on.</p>
+        <div class="cap-actions" id="cap-actions"></div>
+      </div>
+    </section>
+
+    <section class="panel panel-habits" id="panel-habits" hidden aria-label="habits">
+      <div class="panel-head">
+        <h2 id="habits-title">habits</h2>
+        <span class="panel-meta" id="habits-sub">things you do instead of sleeping</span>
+      </div>
+      <div class="upgrades" id="upgrades"></div>
+      <div class="gens" id="gens"></div>
+    </section>
+  </main>
+
+  <nav class="tabs" id="tabs" hidden aria-label="views">
+    <button type="button" data-tab="mind" class="tab is-on">your head</button>
+    <button type="button" data-tab="window" class="tab" hidden>the window</button>
+    <button type="button" data-tab="habits" class="tab">habits</button>
+  </nav>
+</div>
+
+<div id="pops" aria-hidden="true"></div>
+<div id="floaters"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<div id="menu" class="menu" hidden>
+  <button type="button" class="menu-item" id="m-sound">sound: on</button>
+  <button type="button" class="menu-item" id="m-motion">fewer effects: off</button>
+  <button type="button" class="menu-item" id="m-reset">start over</button>
+  <div class="menu-confirm" id="m-confirm" hidden>
+    <p>forget this whole night?</p>
+    <div class="menu-row">
+      <button type="button" class="menu-item danger" id="m-reset-yes">yes, forget it</button>
+      <button type="button" class="menu-item" id="m-reset-no">no</button>
+    </div>
+  </div>
+  <p class="menu-note">your night saves itself, in this browser only.</p>
+</div>
+
+<div id="cinema" class="cinema" hidden>
+  <canvas id="cinema-canvas" class="cinema-canvas"></canvas>
+  <div class="cinema-inner">
+    <div class="cinema-text" id="cinema-text"></div>
+    <div class="cinema-choices" id="cinema-choices"></div>
+  </div>
+  <p class="cinema-skip" id="cinema-skip">tap to continue</p>
+</div>
+
+<div id="title" class="title-screen">
+  <div class="title-inner">
+    <h1 class="title-word">except you<span class="title-dot">.</span></h1>
+    <p class="title-sub">an incremental game about 3 am</p>
+    <div class="title-actions">
+      <button type="button" class="title-btn" id="t-begin">begin</button>
+      <button type="button" class="title-btn" id="t-continue" hidden>keep going</button>
+      <button type="button" class="title-link" id="t-new" hidden>start the night over</button>
+      <div class="menu-confirm" id="t-confirm" hidden>
+        <p>forget the night you were in the middle of?</p>
+        <div class="menu-row">
+          <button type="button" class="menu-item danger" id="t-new-yes">yes, start over</button>
+          <button type="button" class="menu-item" id="t-new-no">no</button>
+        </div>
+      </div>
+    </div>
+    <p class="title-note">headphones, if you have them. about thirty minutes. it saves as you go.</p>
+  </div>
+</div>
+
+<!-- build:scripts -->
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/visuals.js"></script>
+<script src="js/game.js"></script>
+<!-- /build:scripts -->
+<!-- /build:body -->
+</body>
+</html>

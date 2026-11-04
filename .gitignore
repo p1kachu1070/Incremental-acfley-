@@ -1,0 +1,4 @@
+dist/
+.playtest/
+node_modules/
+.DS_Store
