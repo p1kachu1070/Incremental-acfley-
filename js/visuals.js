@@ -381,6 +381,11 @@
       canvas.width = Math.floor(W * d); canvas.height = Math.floor(H * d);
     }
     g.setTransform(d, 0, 0, d, 0, 0);
+    return V.paintBuilding(g, W, H, opts);
+  };
+
+  // the same drawing, into any context at any size (the clip renderer uses this)
+  V.paintBuilding = function (g, W, H, opts) {
     const L = V.layout(W, H);
     const t = opts.t || 0;
     const dawn = opts.dawn || 0;

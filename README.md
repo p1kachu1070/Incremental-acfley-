@@ -30,6 +30,16 @@ node tools/build.js            # -> dist/except-you.html
 | `js/visuals.js` | rain, film grain, drifting text, and the building across the street, drawn on canvas |
 | `js/game.js` | state, the loop, saving, the four acts, the moments, the endings |
 
+## The clip
+
+`clip.html` plays a 17-second vertical trailer (1080×1920) made from the game's own drawing and sound code: the hook, the drop, the spiral, the silence, the end card. Open it on a phone, start a screen recording, tap play. Or render a ready-to-post MP4 with the audio built in:
+
+```sh
+node tools/clip-render.js      # -> dist/except-you-clip.mp4 (needs ffmpeg)
+```
+
+The music is original and synthesized, so there's nothing to get flagged for copyright.
+
 Tools (Node, plus the Playwright that ships with Chromium):
 
 - `node tools/sim.js [clicksPerSecond]` simulates a player and prints when each act lands. Use it after changing any number in `data.js`.

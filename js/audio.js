@@ -99,12 +99,18 @@
     if (!AC) return;
     let ctx;
     try { ctx = new AC(); } catch (e) { return; }
+    A.build(ctx, true);
+  };
+
+  // the whole signal chain, on a live context or an offline one
+  A.build = function (ctx, live) {
     A.ctx = ctx;
     const now = ctx.currentTime;
 
     A.master = ctx.createGain();
     A.master.gain.value = 0;
-    A.master.gain.setTargetAtTime(A.muted ? 0 : 0.85, now, 1.5);
+    if (live) A.master.gain.setTargetAtTime(A.muted ? 0 : 0.85, now, 1.5);
+    else A.master.gain.setValueAtTime(0.85, now);
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4;
     comp.attack.value = 0.01; comp.release.value = 0.4;
@@ -198,8 +204,105 @@
     disLP.connect(A.dis); A.dis.connect(A.music);
 
     A._noise = noiseBuffer(ctx, 3, 'pink');
-    A._nextChord = now + 0.5;
-    A._timer = setInterval(A._schedule, 90);
+    if (live) {
+      A._nextChord = now + 0.5;
+      A._timer = setInterval(A._schedule, 90);
+    }
+  };
+
+  /* -------------------------------------------------------------- */
+  /*  the clip: seventeen seconds, scored note by note               */
+  /*  clip time 0 is ctx time t0 + LEAD, so chords can swell in early */
+  /* -------------------------------------------------------------- */
+  A.CLIP_LEAD = 1.5;
+  A.clipScore = function (t0) {
+    const ctx = A.ctx;
+    const T = x => t0 + A.CLIP_LEAD + x;
+    const P = PROG.night, L = PROG.loud, Dn = PROG.dawn;
+    A.transpose = -2;
+    A.heartVol = 1;
+    A.rain.gain.cancelScheduledValues(t0);
+    A.rain.gain.setValueAtTime(0.12, t0);
+    A.pad.gain.cancelScheduledValues(t0);
+    A.pad.gain.setValueAtTime(0.42, t0);
+    A.padLP.frequency.setValueAtTime(1300, t0);
+
+    // anybody can find love. (IV)
+    A._playChord(P.chords[0], P.bass[0], T(-1.5), 5.4);
+    [[76, 0.4], [74, 0.85], [72, 1.3], [74, 1.75], [76, 2.2], [79, 2.95]].forEach(([n, dt]) => A._pluck(n, 0.42, T(dt), { dur: 3.6 }));
+    // except you. (vi) — it falls, and doesn't come back up
+    A._playChord(P.chords[3], P.bass[3], T(3.95), 4.0);
+    [[76, 4.0], [74, 4.65], [69, 5.6]].forEach(([n, dt]) => A._pluck(n, 0.5, T(dt), { dur: 5 }));
+    A._pluck(45, 0.5, T(5.6), { dur: 6 });
+
+    // it gets loud
+    A._playChord(L.chords[0], L.bass[0], T(8.0), 2.6);
+    A.dis.gain.setValueAtTime(0, T(8.0));
+    A.dis.gain.linearRampToValueAtTime(0.075, T(10.5));
+    A.wobbleDepth.gain.setValueAtTime(3, T(8.0));
+    A.wobbleDepth.gain.linearRampToValueAtTime(48, T(10.5));
+    A.wobble.frequency.setValueAtTime(0.31, T(8.0));
+    A.wobble.frequency.linearRampToValueAtTime(2.6, T(10.5));
+    A.tin.gain.setValueAtTime(0, T(8.0));
+    A.tin.gain.linearRampToValueAtTime(0.0035, T(10.5));
+    A.gritGain.gain.setValueAtTime(0, T(8.0));
+    A.gritGain.gain.linearRampToValueAtTime(0.05, T(10.5));
+    A.rain.gain.setValueAtTime(0.12, T(8.0));
+    A.rain.gain.linearRampToValueAtTime(0.22, T(10.5));
+    [8.0, 8.55, 9.05, 9.5, 9.88, 10.2, 10.45].forEach(b => A._beat(T(b)));
+    A.loud = 0.9;
+    [8.3, 8.8, 9.3, 9.7, 10.0, 10.3].forEach(w => A._whisperNoise(T(w)));
+    [8.2, 8.7, 9.2, 9.6, 9.95, 10.25].forEach((dt, i) => A._pluck(72 + (i % 3), 0.35, T(dt), { dur: 1.2, detune: (i % 2 ? 1 : -1) * 60 }));
+
+    // MAKE IT STOP. then nothing.
+    const cut = T(10.6);
+    A.master.gain.setValueAtTime(0.85, cut - 0.02);
+    A.master.gain.linearRampToValueAtTime(0, cut + 0.02);
+    [A.dis.gain, A.tin.gain, A.gritGain.gain, A.pad.gain].forEach(p => p.setValueAtTime(0, cut + 0.05));
+    A.rain.gain.setValueAtTime(0.025, cut + 0.05);
+    A.wobbleDepth.gain.setValueAtTime(3, cut + 0.05);
+    A.wobble.frequency.setValueAtTime(0.31, cut + 0.05);
+    A.master.gain.setValueAtTime(0, T(11.1));
+    A.master.gain.linearRampToValueAtTime(0.85, T(11.6));
+
+    // i'm still here. (the sound of keeping something)
+    [79, 84, 88].forEach((n, i) => A._pluck(n, 0.2, T(11.35 + i * 0.14), { dur: 3.5 }));
+    // morning
+    A.pad.gain.setValueAtTime(0, T(11.8));
+    A.pad.gain.linearRampToValueAtTime(0.36, T(13.2));
+    A._playChord(Dn.chords[0], Dn.bass[0], T(11.9), 5.5);
+    [48, 55, 60, 64, 67, 71, 74].forEach((n, i) => A._pluck(n, 0.3, T(13.0 + i * 0.09), { dur: 6 }));
+    A.birdVol = 0.8;
+    [13.6, 14.7, 15.6].forEach(b => A._birdSong(T(b)));
+    A.master.gain.setValueAtTime(0.85, T(16.2));
+    A.master.gain.linearRampToValueAtTime(0, T(17.0));
+  };
+
+  // render the clip's audio without a speaker. returns a 16-bit stereo wav as base64.
+  A.renderClipWav = async function (seconds) {
+    const rate = 44100;
+    const OAC = root.OfflineAudioContext || root.webkitOfflineAudioContext;
+    const ctx = new OAC(2, Math.ceil(rate * (seconds + A.CLIP_LEAD)), rate);
+    A.build(ctx, false);
+    A.clipScore(0);
+    const buf = await ctx.startRendering();
+    const n = buf.length, ch = [buf.getChannelData(0), buf.getChannelData(1)];
+    const bytes = new DataView(new ArrayBuffer(44 + n * 4));
+    const str = (o, s) => { for (let i = 0; i < s.length; i++) bytes.setUint8(o + i, s.charCodeAt(i)); };
+    str(0, 'RIFF'); bytes.setUint32(4, 36 + n * 4, true); str(8, 'WAVE'); str(12, 'fmt ');
+    bytes.setUint32(16, 16, true); bytes.setUint16(20, 1, true); bytes.setUint16(22, 2, true);
+    bytes.setUint32(24, rate, true); bytes.setUint32(28, rate * 4, true); bytes.setUint16(32, 4, true);
+    bytes.setUint16(34, 16, true); str(36, 'data'); bytes.setUint32(40, n * 4, true);
+    for (let i = 0, o = 44; i < n; i++) {
+      for (let c = 0; c < 2; c++, o += 2) {
+        const v = Math.max(-1, Math.min(1, ch[c][i]));
+        bytes.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true);
+      }
+    }
+    let bin = '';
+    const u8 = new Uint8Array(bytes.buffer);
+    for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    return btoa(bin);
   };
 
   A.resume = function () {
