@@ -11,6 +11,8 @@ It takes about thirty minutes and plays best with headphones, on a phone or a co
 
 Open `index.html` in a browser. Nothing needs installing or building. Progress saves to the browser as you go.
 
+Once GitHub Pages is on for this repo, it's playable at https://p1kachu1070.github.io/Incremental-acfley-/. The link preview image is `assets/og.png`; regenerate it with `node tools/og.js`.
+
 To make a single self-contained file (CSS and JS inlined) for hosting or sending:
 
 ```sh
