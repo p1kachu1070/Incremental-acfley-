@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>except you. (edit)</title>
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400&family=Instrument+Serif:ital@0;1&family=Spectral:ital,wght@1,300&display=swap">
+<style>
+  :root { color-scheme: dark; }
+  html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
+  #clip {
+    position: absolute; inset: 0; margin: auto;
+    height: 100%; max-width: 100%; aspect-ratio: 9 / 16;
+    display: block; background: #07080d;
+  }
+  #play {
+    position: absolute; inset: 0; width: 100%; border: 0; cursor: pointer;
+    background: rgb(0 0 0 / 0.55); color: #ddd6c8;
+    font: italic 28px "Instrument Serif", Georgia, serif;
+    display: grid; place-items: center; align-content: center; gap: 10px;
+  }
+  #play small { font: 12px "DM Mono", ui-monospace, monospace; letter-spacing: 0.1em; color: #6e7284; font-style: normal; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<canvas id="clip" width="1080" height="1920"></canvas>
+<button type="button" id="play"><span>tap to play</span><small>start your screen recording first · sound on</small></button>
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/visuals.js"></script>
+<script src="js/clip.js"></script>
+<script src="js/edit.js"></script>
+<script>
+(function () {
+  'use strict';
+  const canvas = document.getElementById('clip');
+  const g = canvas.getContext('2d');
+  const btn = document.getElementById('play');
+  const render = new URLSearchParams(location.search).has('render');
+  if (render) btn.hidden = true;
+
+  Clip.ready().then(() => Edit.draw(g, 17.6));
+
+  btn.addEventListener('click', () => {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AC();
+    Sound.build(ctx, false);
+    const t0 = ctx.currentTime + 0.15;
+    Edit.score(t0);
+    const start = t0 + Edit.LEAD;
+    btn.hidden = true;
+    const frame = () => {
+      const t = ctx.currentTime - start;
+      if (t < 0) { g.fillStyle = '#000'; g.fillRect(0, 0, Edit.W, Edit.H); }
+      else Edit.draw(g, Math.min(t, Edit.DURATION));
+      if (t < Edit.DURATION + 0.3) requestAnimationFrame(frame);
+      else {
+        ctx.close();
+        btn.querySelector('span').textContent = 'play again';
+        btn.hidden = false;
+      }
+    };
+    requestAnimationFrame(frame);
+  });
+
+  // for tools/clip-render.js
+  window.__clip = {
+    meta: { FPS: Edit.FPS, DURATION: Edit.DURATION, LEAD: Edit.LEAD },
+    frame(t, quality) { Edit.draw(g, t); return canvas.toDataURL('image/jpeg', quality || 0.93); },
+    audio() { return Sound.renderScoreWav(Edit.DURATION + Edit.LEAD, t0 => Edit.score(t0)); },
+  };
+})();
+</script>
+</body>
+</html>

@@ -248,5 +248,8 @@
     await document.fonts.ready;
   };
 
+  // shared with js/edit.js
+  Clip.util = { hash, smooth, seg, words, grain, rain };
+
   root.Clip = Clip;
 })(window);

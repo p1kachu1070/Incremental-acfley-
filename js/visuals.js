@@ -255,18 +255,20 @@
     const ph = (r.x * 0.13) % 6.28;
     const sway = V.reduced ? 0 : Math.sin(t * 0.7 + ph) * 1.2;
     const jit = V.loud > 0.5 && !V.reduced ? (Math.random() - 0.5) * V.loud * 3 : 0;
-    const gap = GAP[st] * r.w;
+    // gap/tilt can be set directly (the edit's close-ups need two distinct people, leaning in)
+    const gap = (w.gap != null ? w.gap : GAP[st]) * r.w;
+    const lean = w.tilt;
     switch (w.pose) {
       case 'pair': {
         const h = r.h * 0.78;
-        const tilt = st >= 3 ? 0.35 : 0;
+        const tilt = lean != null ? lean : st >= 3 ? 0.35 : 0;
         person(g, cx - gap / 2 + sway + jit, base, h, { tilt });
         person(g, cx + gap / 2 - sway * 0.6 - jit, base, h * 0.94, { tilt: -tilt });
         break;
       }
       case 'sit': {
         const h = r.h * 0.5;
-        const tilt = st >= 3 ? 0.4 : 0;
+        const tilt = lean != null ? lean : st >= 3 ? 0.4 : 0;
         // the back of a couch
         g.fillRect(r.x + r.w * 0.1, base - r.h * 0.18, r.w * 0.8, r.h * 0.18);
         person(g, cx - gap / 2 + sway * 0.5 + jit, base - r.h * 0.1, h, { tilt });
@@ -431,7 +433,7 @@
         lightFill(g, rr, hue, 0.95 * (1 - dawn * 0.35), t, flick);
         if (w.pose !== 'lamp' && w.pose !== 'cat') curtains(g, rr, hue, 1);
         if (s.stage > 0 || w.pose === 'cat' || w.pose === 'lamp' || w.pose === 'single' || opts.allLit) {
-          drawPose(g, Object.assign({}, w, { stage: opts.allLit ? 3 : s.stage, wave: s.wave, sign: s.sign }), rr, t, opts);
+          drawPose(g, Object.assign({}, w, { stage: opts.allLit ? 3 : s.stage, wave: s.wave, sign: s.sign, gap: s.gap, tilt: s.tilt }), rr, t, opts);
         } else {
           // you haven't looked yet. there's just movement behind the curtain.
           g.fillStyle = `hsla(${hue},40%,20%,0.45)`;

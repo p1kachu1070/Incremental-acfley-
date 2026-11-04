@@ -68,6 +68,7 @@
 
   // for tools/clip-render.js
   window.__clip = {
+    meta: { FPS: Clip.FPS, DURATION: Clip.DURATION, LEAD: Sound.CLIP_LEAD },
     frame(t, quality) { Clip.draw(g, t); return canvas.toDataURL('image/jpeg', quality || 0.93); },
     audio(opts) { return Sound.renderClipWav(Clip.DURATION, opts); },
   };

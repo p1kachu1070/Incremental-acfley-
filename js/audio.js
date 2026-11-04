@@ -283,13 +283,13 @@
     A.master.gain.linearRampToValueAtTime(0, T(17.0));
   };
 
-  // render the clip's audio without a speaker. returns a 16-bit stereo wav as base64.
-  A.renderClipWav = async function (seconds, opts) {
+  // render any score offline. schedule(t0) puts its notes on A.ctx. returns a 16-bit stereo wav as base64.
+  A.renderScoreWav = async function (seconds, schedule) {
     const rate = 44100;
     const OAC = root.OfflineAudioContext || root.webkitOfflineAudioContext;
-    const ctx = new OAC(2, Math.ceil(rate * (seconds + A.CLIP_LEAD)), rate);
+    const ctx = new OAC(2, Math.ceil(rate * seconds), rate);
     A.build(ctx, false);
-    A.clipScore(0, opts);
+    schedule(0);
     const buf = await ctx.startRendering();
     const n = buf.length, ch = [buf.getChannelData(0), buf.getChannelData(1)];
     const bytes = new DataView(new ArrayBuffer(44 + n * 4));
@@ -309,6 +309,7 @@
     for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
     return btoa(bin);
   };
+  A.renderClipWav = (seconds, opts) => A.renderScoreWav(seconds + A.CLIP_LEAD, () => A.clipScore(0, opts));
 
   A.resume = function () {
     if (A.ctx && A.ctx.state === 'suspended') A.ctx.resume();

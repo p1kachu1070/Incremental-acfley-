@@ -48,6 +48,19 @@ node tools/clip-render.js --no-music   # -> dist/except-you-clip-for-a-song.mp4
 
 The words "except you." land at 4.0 seconds; trim the song so its line hits there.
 
+## The edit
+
+`edit.html` is a 30-second edit with no advertising in it, cut on the beat to an original slowed + reverb song (72 bpm, the IV–V–iii–vi "royal road"). The hook melody sings the rhythm of *a-ny-bo-dy can find love* and lands on vi at *except you*.
+
+- **0–6.7s:** the song plays muffled, as if through a wall. Rain on your glass, the building pulls into focus.
+- **6.7s, the drop:** the filter opens, the drums come in, and twelve couples cut on twelve beats.
+- **16.7s:** the music gets sucked away. Your reflection in the glass, rain, and "except you." on a lone piano.
+- **20–30s:** their lights go out two by two. One comes on in 6d. Someone alone, like you, waves.
+
+```sh
+node tools/clip-render.js --edit   # -> dist/except-you-edit.mp4
+```
+
 Tools (Node, plus the Playwright that ships with Chromium):
 
 - `node tools/sim.js [clicksPerSecond]` simulates a player and prints when each act lands. Use it after changing any number in `data.js`.

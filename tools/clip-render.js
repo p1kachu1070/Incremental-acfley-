@@ -1,7 +1,10 @@
 #!/usr/bin/env node
-/* Renders clip.html to a vertical 1080x1920 MP4 with the game's own audio, ready for TikTok/Reels/Shorts.
-   Needs ffmpeg on PATH.   usage: node tools/clip-render.js [out.mp4] [--no-music]
-   --no-music keeps only the room sound (rain, heartbeat, whispers, birds) so a song can go on top. */
+/* Renders a vertical 1080x1920 MP4 with the game's own audio, ready for TikTok/Reels/Shorts.
+   Needs ffmpeg on PATH.
+   usage: node tools/clip-render.js [out.mp4] [--edit | --no-music]
+     (default)   clip.html: the 17-second trailer with the game's score
+     --no-music  the trailer with only the room sound (rain, heartbeat, whispers, birds), for a song on top
+     --edit      edit.html: the 30-second edit, cut on the beat to an original slowed + reverb song */
 'use strict';
 const path = require('path');
 const fs = require('fs');
@@ -10,21 +13,24 @@ const { spawn } = require('child_process');
 const { chromium } = require('playwright');
 
 const root = path.join(__dirname, '..');
+const edit = process.argv.includes('--edit');
 const noMusic = process.argv.includes('--no-music');
 const outArg = process.argv.slice(2).find(a => !a.startsWith('--'));
-const out = path.resolve(outArg || path.join(root, 'dist', noMusic ? 'except-you-clip-for-a-song.mp4' : 'except-you-clip.mp4'));
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'except-you-clip-'));
+const name = edit ? 'except-you-edit.mp4' : noMusic ? 'except-you-clip-for-a-song.mp4' : 'except-you-clip.mp4';
+const out = path.resolve(outArg || path.join(root, 'dist', name));
+const pageFile = edit ? 'edit.html' : 'clip.html';
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'except-you-render-'));
 
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 540, height: 960 }, deviceScaleFactor: 1 });
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
-  await page.goto('file://' + path.join(root, 'clip.html') + '?render');
+  await page.goto('file://' + path.join(root, pageFile) + '?render');
   await page.evaluate(() => Clip.ready());
-  const { FPS, DURATION, LEAD } = await page.evaluate(() => ({ FPS: Clip.FPS, DURATION: Clip.DURATION, LEAD: Sound.CLIP_LEAD }));
+  const { FPS, DURATION, LEAD } = await page.evaluate(() => window.__clip.meta);
 
-  console.log('rendering audio…');
+  console.log(`rendering audio for ${pageFile}…`);
   const wav = path.join(tmp, 'audio.wav');
   fs.writeFileSync(wav, Buffer.from(await page.evaluate(m => window.__clip.audio(m ? { music: false } : undefined), noMusic), 'base64'));
   // a fresh page for frames, so the offline audio graph is out of the way
@@ -37,7 +43,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'except-you-clip-'));
     '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
     '-ss', String(LEAD), '-i', wav,
     '-map', '0:v', '-map', '1:a',
-    '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p', '-r', String(FPS),
+    '-c:v', 'libx264', '-preset', 'slow', '-crf', '21', '-pix_fmt', 'yuv420p', '-r', String(FPS),
     '-af', 'volume=4dB,alimiter=limit=0.891:level=0',
     '-c:a', 'aac', '-b:a', '192k', '-ar', '44100',
     '-t', String(DURATION), '-movflags', '+faststart', out,
